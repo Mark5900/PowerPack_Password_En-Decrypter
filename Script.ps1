@@ -65,7 +65,7 @@ function Encrypt-Password {
 
 	if ([string]::IsNullOrWhiteSpace($encryptionKey)) {
 		[Security.Cryptography.RNGCryptoServiceProvider]::Create().GetBytes($key)
-		$encryptionKeyTextBox.Text = [System.BitConverter]::ToString($key) -replace '-', ','
+		$encryptionKeyTextBox.Text = $key -join ','
 	} else {
 		$key = $encryptionKey -split ',' | ForEach-Object { [Convert]::ToByte($_, 16) }
 	}
@@ -86,7 +86,7 @@ function Decrypt-Password {
 	}
 
 	try {
-		$key = $encryptionKey -split ',' | ForEach-Object { [Convert]::ToByte($_, 16) }
+		$key = $encryptionKey -split ','
 		$encryptedPasswordAsSecureString = $encryptedPassword | ConvertTo-SecureString -Key $key
 		$bstr = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($encryptedPasswordAsSecureString)
 		$decryptedPassword = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($bstr)
