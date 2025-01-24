@@ -2,7 +2,7 @@ Add-Type -AssemblyName 'System.Windows.Forms'
 
 # Create form
 $form = New-Object System.Windows.Forms.Form
-$form.Text = 'Encrypt / Decrypt Password'
+$form.Text = 'PowerPack - Encrypt / Decrypt Password'
 $form.Size = New-Object System.Drawing.Size(700, 250)
 $form.FormBorderStyle = 'FixedDialog'
 $form.MaximizeBox = $false
@@ -30,17 +30,14 @@ $textBoxLength = $form.Width - 100
 $passwordTextBox = New-Object System.Windows.Forms.TextBox
 $passwordTextBox.Size = New-Object System.Drawing.Size($textBoxLength, 20)
 $passwordTextBox.Location = New-Object System.Drawing.Point(50, 20)
-$passwordTextBox.PlaceholderText = 'Enter Password'
 
 $encryptionKeyTextBox = New-Object System.Windows.Forms.TextBox
 $encryptionKeyTextBox.Size = New-Object System.Drawing.Size($textBoxLength, 20)
 $encryptionKeyTextBox.Location = New-Object System.Drawing.Point(50, 70)
-$encryptionKeyTextBox.PlaceholderText = 'Enter Encryption Key'
 
 $encryptedPasswordTextBox = New-Object System.Windows.Forms.TextBox
 $encryptedPasswordTextBox.Size = New-Object System.Drawing.Size($textBoxLength, 20)
 $encryptedPasswordTextBox.Location = New-Object System.Drawing.Point(50, 120)
-$encryptedPasswordTextBox.PlaceholderText = 'Encrypted Password'
 
 # Create buttons
 $encryptButton = New-Object System.Windows.Forms.Button
@@ -70,7 +67,7 @@ function Encrypt-Password {
 		[Security.Cryptography.RNGCryptoServiceProvider]::Create().GetBytes($key)
 		$encryptionKeyTextBox.Text = [System.BitConverter]::ToString($key) -replace '-', ','
 	} else {
-		$key = [System.Text.Encoding]::UTF8.GetBytes($encryptionKey)
+		$key = $encryptionKey -split ',' | ForEach-Object { [Convert]::ToByte($_, 16) }
 	}
 
 	$passwordAsSecureString = ConvertTo-SecureString -String $password -AsPlainText -Force
@@ -107,6 +104,44 @@ $encryptButton.Add_Click({
 
 $decryptButton.Add_Click({
 		Decrypt-Password
+	})
+
+# Add KeyDown event handler to textboxes
+$passwordTextBox.Add_KeyDown({
+		param($sender, $e)
+		if ($e.Control -and $e.KeyCode -eq [System.Windows.Forms.Keys]::A) {
+			$sender.SelectAll()
+			$e.SuppressKeyPress = $true
+		}
+		if ($e.KeyCode -eq [System.Windows.Forms.Keys]::Enter) {
+			Encrypt-Password
+		}
+	})
+
+$encryptionKeyTextBox.Add_KeyDown({
+		param($sender, $e)
+		if ($e.Control -and $e.KeyCode -eq [System.Windows.Forms.Keys]::A) {
+			$sender.SelectAll()
+			$e.SuppressKeyPress = $true
+		}
+		if ($e.KeyCode -eq [System.Windows.Forms.Keys]::Enter) {
+			if ([string]::IsNullOrWhiteSpace($passwordTextBox.Text)) {
+				Decrypt-Password
+			} else {
+				Encrypt-Password
+			}
+		}
+	})
+
+$encryptedPasswordTextBox.Add_KeyDown({
+		param($sender, $e)
+		if ($e.Control -and $e.KeyCode -eq [System.Windows.Forms.Keys]::A) {
+			$sender.SelectAll()
+			$e.SuppressKeyPress = $true
+		}
+		if ($e.KeyCode -eq [System.Windows.Forms.Keys]::Enter) {
+			Decrypt-Password
+		}
 	})
 
 # Add controls to form
